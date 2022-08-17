@@ -1,12 +1,11 @@
 {
     "env": {
         "browser": true,
-        "es2021": true,
-        "node": true
+        "es2021": true
     },
     "extends": [
         "plugin:react/recommended",
-        "standard"
+        "google"
     ],
     "overrides": [
     ],
@@ -18,7 +17,8 @@
         "react"
     ],
     "rules": {
+        "react/react-in-jsx-scope": "off",
         "react/prop-types": "off",
-        "react/react-in-jsx-scope": "off"
+        "no-unused-vars": 1
     }
 }
