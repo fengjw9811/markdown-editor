@@ -34,23 +34,9 @@ const FileSearch = (props) => {
   }, [inputActive]);
   return (
     <div className='alert alert-primary d-flex
-    justify-content-between align-items-center'>
+    justify-content-between align-items-center mb-0 mx-0'>
       {
-        !inputActive && (
-          <>
-            <span>{title}</span>
-            <button
-              type='button'
-              className='icon-button'
-              onClick={() => setInputActive(true)}>
-              {/* <img src={searchSVG} width="25px"/> */}
-              <FontAwesomeIcon icon={faMagnifyingGlass} title="搜索" size='lg'/>
-            </button>
-          </>
-        )
-      }
-      {
-        inputActive && (
+        inputActive ? (
           <>
             <input
               className='form-control'
@@ -63,6 +49,16 @@ const FileSearch = (props) => {
               className='icon-button'
               onClick={closeSearch}>
               <FontAwesomeIcon icon={faXmark} size="lg" />
+            </button>
+          </>
+        ) : (
+          <>
+            <span>{title}</span>
+            <button
+              type='button'
+              className='icon-button'
+              onClick={() => setInputActive(true)}>
+              <FontAwesomeIcon icon={faMagnifyingGlass} title="搜索" size='lg'/>
             </button>
           </>
         )
