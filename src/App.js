@@ -100,12 +100,17 @@ const App = () => {
   };
 
   const deleteFile = (fileId) => {
-    fileHelper.deleteFile(files[fileId].path).then(() => {
-      delete files[fileId];
-      setFiles(files);
-      saveFilesToStore(files);
-      closeTab(fileId);
-    });
+    if (files[fileId].isNew) {
+      const {[fileId]: value, ...afterDelete} = files;
+      setFiles(afterDelete);
+    } else {
+      fileHelper.deleteFile(files[fileId].path).then(() => {
+        const {[fileId]: value, ...afterDelete} = files;
+        setFiles(afterDelete);
+        saveFilesToStore(afterDelete);
+        closeTab(fileId);
+      });
+    }
   };
 
   // TabList的函数
