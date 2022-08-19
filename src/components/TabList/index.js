@@ -1,3 +1,4 @@
+import React from 'react';
 import PropsType from 'prop-types';
 import classNames from 'classnames';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
@@ -11,31 +12,50 @@ const TabList = (props) => {
       {
         files.map((file) => {
           const withUnsavedMark = unsaveIds.includes(file.id);
-          {/* const fClassname = classNames({
+          const fClassname = classNames({
             'nav-link': true,
             'active': file.id === activeId,
-          }); */}
+          });
           return (
-            <li className='' key={ file.id }>
+            <li className='nav-item' key={ file.id }>
               <a
                 href="#"
-                className='nav-link'
+                className={fClassname}
                 onClick={() => onTabClick(file.id)}
               >
                 {file.title}
                 {
-                  withUnsavedMark === file.id ? (
-                    <span className='rounded-circle ms-2 unsaved-icon' />
-                  ) : (
-                    activeId === file.id ? (
-                      <span className='ms-2' onClick={
+                  withUnsavedMark ? (
+                    <span className='unsaved-span'>
+                      <span className='rounded-circle ms-2 unsaved-icon' />
+                      <span className='close-icon ms-2' onClick={
                         (e) => {
                           e.stopPropagation(); onCloseTab(file.id);
                         }
                       }>
                         <FontAwesomeIcon icon={faXmark} size='lg' />
                       </span>
-                    ) : null
+                    </span>
+                  ) : (
+                    activeId === file.id ? (
+                      <span className='close-icon-active ms-2' onClick={
+                        (e) => {
+                          e.stopPropagation(); onCloseTab(file.id);
+                        }
+                      }>
+                        <FontAwesomeIcon icon={faXmark} size='lg' />
+                      </span>
+                    ) : (
+                      <span className='saved-unactive-span'>
+                        <span className='close-icon ms-2' onClick={
+                          (e) => {
+                            e.stopPropagation(); onCloseTab(file.id);
+                          }
+                        }>
+                          <FontAwesomeIcon icon={faXmark} size='lg' />
+                        </span>
+                      </span>
+                    )
                   )
                 }
               </a>
@@ -48,8 +68,8 @@ const TabList = (props) => {
 };
 
 TabList.propTypes = {
-  files: PropsType.array,
-  activeId: PropsType.number,
+  files: PropsType.object,
+  activeId: PropsType.number || PropsType.string,
   unsaveIds: PropsType.array,
   onTabClick: PropsType.func,
   onCloseTab: PropsType.func,

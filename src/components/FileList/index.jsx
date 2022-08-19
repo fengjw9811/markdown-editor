@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faPen, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {faMarkdown} from '@fortawesome/free-brands-svg-icons';
@@ -11,22 +11,41 @@ const FileList = (props) => {
   const [value, setValue] = useState('');
   const enterPressed = useKeyPress(13);
   const escPressed = useKeyPress(27);
-  const closeSearch = () => {
+  const closeSearch = (editItem) => {
     setEditStatus(0);
     setValue('');
+    // 关闭输入框时,应该删除当前编辑的文件
+    if (editItem.isNew) {
+      onFileDelete(editItem.id);
+    }
   };
+  const input = useRef(null);
 
   useEffect(() => {
-    if (enterPressed && editStatus) {
-      const editItem = files.find((file) => file.id === editStatus);
+    const newFile = files.find((file) => file.isNew);
+    if (newFile) {
+      setEditStatus(newFile.id);
+      setValue(newFile.title);
+    }
+  }, [files]);
+
+  useEffect(() => {
+    const editItem = files.find((file) => file.id === editStatus);
+    if (enterPressed && editStatus && value.trim() !== '') {
       onSaveEdit(editItem.id, value);
       setEditStatus(0);
       setValue('');
     }
     if (escPressed && editStatus) {
-      closeSearch();
+      closeSearch(editItem);
     }
   });
+
+  useEffect(() => {
+    if (editStatus) {
+      input.current.focus();
+    }
+  }, [editStatus]);
 
   return (
     <ul className='list-group list-ground-flush file-list'>
@@ -34,14 +53,16 @@ const FileList = (props) => {
         files.map((file) => (
           <li
             className='list-group-item bg-light
-            d-flex align-items-center file-item'
+                      d-flex align-items-center file-item'
             key={file.id}>
             {
-              file.id === editStatus ? (
+              (file.id === editStatus || file.isNew) ? (
                 <>
                   <div className='col-10'>
                     <input
                       className='form-control'
+                      placeholder='请输入文件名称'
+                      ref={input}
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
                     />
@@ -49,7 +70,7 @@ const FileList = (props) => {
                   <button
                     type='button'
                     className='icon-button col-2'
-                    onClick={closeSearch}
+                    onClick={() => closeSearch(file)}
                   >
                     <FontAwesomeIcon icon={faXmark} size="lg" />
                   </button>
@@ -59,11 +80,11 @@ const FileList = (props) => {
                   <span className='col-2'>
                     <FontAwesomeIcon icon={faMarkdown} size='lg' />
                   </span>
-                  <span className='col-8 c-link'
+                  <span className='col-7 c-link'
                     onClick={() => onFileClick(file.id)}>
                     {file.title}
                   </span>
-                  <button className='icon-button col-1' onClick={() => {
+                  <button className='icon-button col-2' onClick={() => {
                     setEditStatus(file.id); setValue(file.title);
                   }}>
                     <FontAwesomeIcon title='编辑' icon={faPen} size='lg' />

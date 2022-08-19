@@ -1,6 +1,30 @@
 .unsaved-icon {
   display: inline-block;
   background-color: #d9534f;
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
+}
+
+.unsaved-span .unsaved-icon {
+  display: inline-block;
+}
+
+.unsaved-span .close-icon {
+  display: none;
+}
+
+.unsaved-span:hover .unsaved-icon {
+  display: none;
+}
+
+.unsaved-span:hover .close-icon {
+  display: inline-block;
+}
+
+.saved-unactive-span .close-icon {
+  visibility: hidden;
+}
+
+.saved-unactive-span:hover .close-icon {
+  visibility: visible;
 }

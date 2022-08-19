@@ -1,3 +1,4 @@
+import React from 'react';
 import {useState, useEffect, useRef} from 'react';
 import PropTypes from 'prop-types';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
@@ -15,6 +16,7 @@ const FileSearch = (props) => {
   const closeSearch = () => {
     setInputActive(false);
     setValue('');
+    onFileSearch('');
   };
 
   useEffect(() => {
@@ -32,6 +34,7 @@ const FileSearch = (props) => {
       input.current.focus();
     }
   }, [inputActive]);
+
   return (
     <div className='alert alert-primary d-flex
     justify-content-between align-items-center mb-0 mx-0'>

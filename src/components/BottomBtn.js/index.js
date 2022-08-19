@@ -1,5 +1,6 @@
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import PropsTypes from 'prop-types';
+import React from 'react';
 
 const BottomBtn = (props) => {
   const {text, color, icon, onBtnClick} = props;

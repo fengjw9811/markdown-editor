@@ -11,6 +11,12 @@ const defaultFiles = [
     body: '## this is the title',
     createdTime: 1660761476093,
   },
+  {
+    id: 3,
+    title: '你好世界',
+    body: 'hello world',
+    createdTime: 1660881332731,
+  },
 ];
 
 export default defaultFiles;
