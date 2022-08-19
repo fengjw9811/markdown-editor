@@ -1,6 +1,10 @@
 import React, {useState, useMemo} from 'react';
 import {v4 as uuidv4} from 'uuid';
-import {faPlus, faFileImport} from '@fortawesome/free-solid-svg-icons';
+import {
+  faPlus,
+  faFileImport,
+  faFloppyDisk,
+} from '@fortawesome/free-solid-svg-icons';
 import SimpleMdeReact from 'react-simplemde-editor';
 import FileSearch from './components/FileSearch';
 import FileList from './components/FileList';
@@ -8,9 +12,30 @@ import BottomBtn from './components/BottomBtn.js';
 import TabList from './components/TabList';
 import defaultFiles from './utils/defaultFiles';
 import {flattenArr, objToArr} from './utils/helper';
+import fileHelper from './utils/fileHelper';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'easymde/dist/easymde.min.css';
+
+const {join} = window.require('path');
+const remote = window.require('@electron/remote');
+const Store = window.require('electron-store');
+const fileStore = new Store({'name': 'File Data'});
+
+const saveFilesToStore = (files) => {
+  // 仅保存 id title path createdTime 的信息
+  const filesStoreObj = objToArr(files).reduce((result, item) => {
+    const {id, path, title, createdTime} = item;
+    result[id] = {
+      id,
+      path,
+      title,
+      createdTime,
+    };
+    return result;
+  }, {});
+  fileStore.set('files', filesStoreObj);
+};
 
 const App = () => {
   const autofocusNoSpellcheckerOptions = useMemo(() => {
@@ -20,17 +45,18 @@ const App = () => {
       minHeight: '515px',
     };
   }, []);
-  const [files, setFiles] = useState(flattenArr(defaultFiles));
-  const [activeFileId, setActiveFileId] = useState(0);
+  const [files, setFiles] = useState(fileStore.get('files') || {});
+  const [activeFileId, setActiveFileId] = useState('');
   const [openedFileIds, setOpenedFileIds] = useState([]);
   const [unsavedFileIds, setUnsavedFileIds] = useState([]);
   const [searchedFiles, setSearchedFiles] = useState([]);
   const filesArr = objToArr(files);
+  const savedLocation = remote.app.getPath('documents');
+  const activeFile = files[activeFileId];
   const openedFiles = openedFileIds.map((openId) => {
     return files[openId];
   });
   const fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr;
-  const activeFile = files[activeFileId];
 
   // FileSearch的函数
   const searchFile = (keyword) => {
@@ -42,21 +68,44 @@ const App = () => {
   const clickFile = (fileId) => {
     // 文件状态变为active
     setActiveFileId(fileId);
+    const currentFile = files[fileId];
+    if (!currentFile.isLoaded) {
+      fileHelper.readFile(currentFile.path).then((value) => {
+        const newFile = {...files[fileId], body: value, isLoaded: true};
+        setFiles({...files, [fileId]: newFile});
+      });
+    }
     // 文件状态变为打开(需要做限制)
     if (!openedFileIds.includes(fileId)) {
       setOpenedFileIds([...openedFileIds, fileId]);
     }
   };
 
-  const updateFileName = (id, title) => {
-    const modifiedFile = {...files[id], title, isNew: false};
-    setFiles({...files, id: modifiedFile});
+  const updateFileName = (id, title, isNew) => {
+    const newPath = join(savedLocation, `${title}.md`);
+    const modifiedFile = {...files[id], title, isNew: false, path: newPath};
+    const newFiles = {...files, [id]: modifiedFile};
+    if (isNew) {
+      fileHelper.writeFile(newPath, files[id].body).then(() => {
+        setFiles(newFiles);
+        saveFilesToStore(newFiles);
+      });
+    } else {
+      const oldPath = join(savedLocation, `${files[id].title}.md`);
+      fileHelper.renameFile(oldPath, newPath).then(() => {
+        setFiles(newFiles);
+        saveFilesToStore(newFiles);
+      });
+    }
   };
 
   const deleteFile = (fileId) => {
-    delete files[fileId];
-    setFiles(files);
-    closeTab(fileId);
+    fileHelper.deleteFile(files[fileId].path).then(() => {
+      delete files[fileId];
+      setFiles(files);
+      saveFilesToStore(files);
+      closeTab(fileId);
+    });
   };
 
   // TabList的函数
@@ -74,7 +123,7 @@ const App = () => {
     if (newOpenedFileIds.length > 0) {
       setActiveFileId(newOpenedFileIds[newOpenedFileIds.length - 1]);
     } else {
-      setActiveFileId(0);
+      setActiveFileId('');
     }
   };
 
@@ -96,12 +145,23 @@ const App = () => {
   // 编辑框中输入内容,改变file的body
   const fileChange = (id, value) => {
     // 改变files
-    const newFile = {...files[id], body: value};
-    setFiles({...files, [id]: newFile});
+    if (value !== files[id].body) {
+      const newFile = {...files[id], body: value};
+      setFiles({...files, [id]: newFile});
+    }
     // 将当前文件的状态置为unsaved
     if (!unsavedFileIds.includes(id)) {
       setUnsavedFileIds([...unsavedFileIds, id]);
     }
+  };
+  // 保存编辑的文件
+  const saveCurrentFile = () => {
+    fileHelper.writeFile(
+        join(savedLocation, `${activeFile.title}.md`),
+        activeFile.body,
+    ).then(() => {
+      setUnsavedFileIds(unsavedFileIds.filter((id) => id !== activeFile.id));
+    });
   };
 
   return (
@@ -151,6 +211,8 @@ const App = () => {
                   }}
                   options={autofocusNoSpellcheckerOptions}
                 />
+                <BottomBtn text='保存' color='btn-success' icon={faFloppyDisk}
+                  onBtnClick={saveCurrentFile}/>
               </>
             )
           }

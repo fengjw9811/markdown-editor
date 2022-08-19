@@ -7,19 +7,19 @@ import useKeyPress from '../../hooks/useKeyPress';
 
 const FileList = (props) => {
   const {files, onFileClick, onSaveEdit, onFileDelete} = props;
-  const [editStatus, setEditStatus] = useState(0);
+  const [editStatus, setEditStatus] = useState(false);
   const [value, setValue] = useState('');
+  const input = useRef(null);
   const enterPressed = useKeyPress(13);
   const escPressed = useKeyPress(27);
   const closeSearch = (editItem) => {
-    setEditStatus(0);
+    setEditStatus(false);
     setValue('');
     // 关闭输入框时,应该删除当前编辑的文件
     if (editItem.isNew) {
       onFileDelete(editItem.id);
     }
   };
-  const input = useRef(null);
 
   useEffect(() => {
     const newFile = files.find((file) => file.isNew);
@@ -32,8 +32,8 @@ const FileList = (props) => {
   useEffect(() => {
     const editItem = files.find((file) => file.id === editStatus);
     if (enterPressed && editStatus && value.trim() !== '') {
-      onSaveEdit(editItem.id, value);
-      setEditStatus(0);
+      onSaveEdit(editItem.id, value, editItem.isNew);
+      setEditStatus(false);
       setValue('');
     }
     if (escPressed && editStatus) {

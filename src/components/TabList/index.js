@@ -68,8 +68,8 @@ const TabList = (props) => {
 };
 
 TabList.propTypes = {
-  files: PropsType.object,
-  activeId: PropsType.number || PropsType.string,
+  files: PropsType.array,
+  activeId: PropsType.string,
   unsaveIds: PropsType.array,
   onTabClick: PropsType.func,
   onCloseTab: PropsType.func,
