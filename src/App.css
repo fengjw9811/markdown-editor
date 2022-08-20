@@ -1,3 +1,7 @@
+* {
+  user-select: none;
+}
+
 .icon-button {
   background: none;
   border: none;

@@ -4,9 +4,7 @@ import {faPen, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {faMarkdown} from '@fortawesome/free-brands-svg-icons';
 import PropTypes from 'prop-types';
 import useKeyPress from '../../hooks/useKeyPress';
-
-const {remote} = window.require('electron');
-const {Menu, MenuItem} = remote;
+import useContextMenu from '../../hooks/useContextMenu';
 
 const FileList = (props) => {
   const {files, onFileClick, onSaveEdit, onFileDelete} = props;
@@ -24,9 +22,30 @@ const FileList = (props) => {
     }
   };
 
-  useEffect(() => {
-
-  }, []);
+  const clickedItem = useContextMenu([
+    {
+      label: '打开',
+      click: () => {
+        const {id} = clickedItem.current.dataset;
+        onFileClick(id);
+      },
+    },
+    {
+      label: '重命名',
+      click: () => {
+        const {id, title} = clickedItem.current.dataset;
+        setEditStatus(id);
+        setValue(title);
+      },
+    },
+    {
+      label: '删除',
+      click: () => {
+        const {id} = clickedItem.current.dataset;
+        onFileDelete(id);
+      },
+    },
+  ], '.file-list-item', [files]);
 
   useEffect(() => {
     const newFile = files.find((file) => file.isNew);
@@ -61,7 +80,8 @@ const FileList = (props) => {
           <li
             className='list-group-item bg-light
                       d-flex align-items-center file-item'
-            key={file.id}>
+            key={file.id}
+          >
             {
               (file.id === editStatus || file.isNew) ? (
                 <>
@@ -87,20 +107,14 @@ const FileList = (props) => {
                   <span className='col-2'>
                     <FontAwesomeIcon icon={faMarkdown} size='lg' />
                   </span>
-                  <span className='col-7 c-link'
-                    onClick={() => onFileClick(file.id)}>
+                  <span
+                    className='col-10 c-link file-list-item'
+                    onClick={() => onFileClick(file.id)}
+                    data-id={file.id}
+                    data-title={file.title}
+                  >
                     {file.title}
                   </span>
-                  <button className='icon-button col-2' onClick={() => {
-                    setEditStatus(file.id); setValue(file.title);
-                  }}>
-                    <FontAwesomeIcon title='编辑' icon={faPen} size='lg' />
-                  </button>
-                  <button className='icon-button col-1' onClick={() => {
-                    onFileDelete(file.id);
-                  }}>
-                    <FontAwesomeIcon title='删除' icon={faTrash} size='lg' />
-                  </button>
                 </>
               )
             }
