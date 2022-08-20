@@ -5,6 +5,9 @@ import {faMarkdown} from '@fortawesome/free-brands-svg-icons';
 import PropTypes from 'prop-types';
 import useKeyPress from '../../hooks/useKeyPress';
 
+const {remote} = window.require('electron');
+const {Menu, MenuItem} = remote;
+
 const FileList = (props) => {
   const {files, onFileClick, onSaveEdit, onFileDelete} = props;
   const [editStatus, setEditStatus] = useState(false);
@@ -20,6 +23,10 @@ const FileList = (props) => {
       onFileDelete(editItem.id);
     }
   };
+
+  useEffect(() => {
+
+  }, []);
 
   useEffect(() => {
     const newFile = files.find((file) => file.isNew);
