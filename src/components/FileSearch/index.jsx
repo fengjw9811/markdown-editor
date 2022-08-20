@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faMagnifyingGlass, faXmark} from '@fortawesome/free-solid-svg-icons';
 import useKeyPress from '../../hooks/useKeyPress';
+import useIpcRenderer from '../../hooks/useIpcRenderer';
 
 const FileSearch = (props) => {
   const {title, onFileSearch} = props;
@@ -27,6 +28,10 @@ const FileSearch = (props) => {
       closeSearch();
     }
   });
+
+  useIpcRenderer({'search-file': () => {
+    setInputActive(true);
+  }});
 
   // 实现input框的自动focus
   useEffect(() => {

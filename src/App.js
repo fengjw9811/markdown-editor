@@ -1,10 +1,6 @@
 import React, {useState, useMemo} from 'react';
 import {v4 as uuidv4} from 'uuid';
-import {
-  faPlus,
-  faFileImport,
-  faFloppyDisk,
-} from '@fortawesome/free-solid-svg-icons';
+import {faPlus, faFileImport} from '@fortawesome/free-solid-svg-icons';
 import SimpleMdeReact from 'react-simplemde-editor';
 import FileSearch from './components/FileSearch';
 import FileList from './components/FileList';
@@ -12,6 +8,7 @@ import BottomBtn from './components/BottomBtn.js';
 import TabList from './components/TabList';
 import {flattenArr, objToArr} from './utils/helper';
 import fileHelper from './utils/fileHelper';
+import useIpcRenderer from './hooks/useIpcRenderer';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'easymde/dist/easymde.min.css';
@@ -19,6 +16,7 @@ import 'easymde/dist/easymde.min.css';
 const {join, basename, extname, dirname} = window.require('path');
 const remote = window.require('@electron/remote');
 const Store = window.require('electron-store');
+const settingsStore = new Store({name: 'Settings'});
 const fileStore = new Store({'name': 'File Data'});
 
 const saveFilesToStore = (files) => {
@@ -50,7 +48,8 @@ const App = () => {
   const [unsavedFileIds, setUnsavedFileIds] = useState([]);
   const [searchedFiles, setSearchedFiles] = useState([]);
   const filesArr = objToArr(files);
-  const savedLocation = remote.app.getPath('documents');
+  const savedLocation =
+  settingsStore.get('savedFileLocation') || remote.app.getPath('documents');
   const activeFile = files[activeFileId];
   const openedFiles = openedFileIds.map((openId) => {
     return files[openId];
@@ -202,6 +201,12 @@ const App = () => {
     });
   };
 
+  useIpcRenderer({
+    'create-new-file': createNewFile,
+    'import-file': importFiles,
+    'save-edit-file': saveCurrentFile,
+  });
+
   return (
     <div className="App container-fluid" style={{height: '0vh'}}>
       <div className='row row-cols-2'>
@@ -249,8 +254,6 @@ const App = () => {
                   }}
                   options={autofocusNoSpellcheckerOptions}
                 />
-                <BottomBtn text='保存' color='btn-success' icon={faFloppyDisk}
-                  onBtnClick={saveCurrentFile}/>
               </>
             )
           }
