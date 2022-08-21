@@ -9,25 +9,32 @@ import TabList from './components/TabList';
 import {flattenArr, objToArr} from './utils/helper';
 import fileHelper from './utils/fileHelper';
 import useIpcRenderer from './hooks/useIpcRenderer';
+import {timestampToString} from './utils/helper';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'easymde/dist/easymde.min.css';
 
 const {join, basename, extname, dirname} = window.require('path');
+const {ipcRenderer} = window.require('electron');
 const remote = window.require('@electron/remote');
 const Store = window.require('electron-store');
 const settingsStore = new Store({name: 'Settings'});
 const fileStore = new Store({'name': 'File Data'});
-
+const getAutoSync = () => {
+  return ['accessKey', 'secretKey', 'bucketName', 'enableAutoSync']
+      .every((key) => !!settingsStore.get(key));
+};
 const saveFilesToStore = (files) => {
   // 仅保存 id title path createdTime 的信息
   const filesStoreObj = objToArr(files).reduce((result, item) => {
-    const {id, path, title, createdTime} = item;
+    const {id, path, title, createdTime, isSynced, updatedTime} = item;
     result[id] = {
       id,
       path,
       title,
       createdTime,
+      isSynced,
+      updatedTime,
     };
     return result;
   }, {});
@@ -67,11 +74,20 @@ const App = () => {
     // 文件状态变为active
     setActiveFileId(fileId);
     const currentFile = files[fileId];
-    if (!currentFile.isLoaded) {
-      fileHelper.readFile(currentFile.path).then((value) => {
-        const newFile = {...files[fileId], body: value, isLoaded: true};
-        setFiles({...files, [fileId]: newFile});
-      });
+    const {id, title, path, isLoaded} = currentFile;
+    if (!isLoaded) {
+      if (getAutoSync()) {
+        ipcRenderer.send('download-file', {
+          key: `${title}.md`,
+          path,
+          id,
+        });
+      } else {
+        fileHelper.readFile(currentFile.path).then((value) => {
+          const newFile = {...files[fileId], body: value, isLoaded: true};
+          setFiles({...files, [fileId]: newFile});
+        });
+      }
     }
     // 文件状态变为打开(需要做限制)
     if (!openedFileIds.includes(fileId)) {
@@ -196,8 +212,50 @@ const App = () => {
   };
   // 保存编辑的文件
   const saveCurrentFile = () => {
-    fileHelper.writeFile(activeFile.path, activeFile.body).then(() => {
+    const {path, body, title} = activeFile;
+    fileHelper.writeFile(path, body).then(() => {
       setUnsavedFileIds(unsavedFileIds.filter((id) => id !== activeFile.id));
+      if (getAutoSync()) {
+        ipcRenderer.send('upload-file', {key: `${title}.md`, path});
+      }
+    });
+  };
+
+  const activeFileUploaded = () => {
+    const {id} = activeFile;
+    const modifiedFile = {
+      ...files[id],
+      isSynced: true,
+      updatedTime: new Date().getTime(),
+    };
+    console.log(modifiedFile);
+    const newFiles = {...files, [id]: modifiedFile};
+    console.log('newFiles', newFiles);
+    setFiles(newFiles);
+    saveFilesToStore(newFiles);
+  };
+
+  const activeFileDownloaded = (event, message) => {
+    const currentFile = files[message.id];
+    const {id, path} = currentFile;
+    fileHelper.readFile(path).then((value) => {
+      let newFile;
+      if (message.status === 'download-success') {
+        console.log('new file downloaded');
+        newFile = {
+          ...files[id],
+          body: value,
+          isLoaded: true,
+          isSynced: true,
+          updatedTime: Date().now,
+        };
+      } else {
+        console.log('no new file');
+        newFile = {...files[id], body: value, isLoaded: true};
+      }
+      const newFiles = {...files, [id]: newFile};
+      setFiles(newFiles);
+      saveFilesToStore(newFiles);
     });
   };
 
@@ -205,6 +263,8 @@ const App = () => {
     'create-new-file': createNewFile,
     'import-file': importFiles,
     'save-edit-file': saveCurrentFile,
+    'active-file-uploaded': activeFileUploaded,
+    'file-downloaded': activeFileDownloaded,
   });
 
   return (
@@ -254,6 +314,13 @@ const App = () => {
                   }}
                   options={autofocusNoSpellcheckerOptions}
                 />
+                {
+                  activeFile.isSynced && (
+                    <span className='sync-status'>
+                    已同步，上次同步时间为{timestampToString(activeFile.updatedTime)}
+                    </span>
+                  )
+                }
               </>
             )
           }

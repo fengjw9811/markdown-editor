@@ -10,3 +10,9 @@ export const flattenArr = (arr) => {
 export const objToArr = (obj) => {
   return Object.keys(obj).map((key) => obj[key]);
 };
+
+export const timestampToString = (timestamp) => {
+  console.log(timestamp);
+  const date = new Date(timestamp);
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+};
