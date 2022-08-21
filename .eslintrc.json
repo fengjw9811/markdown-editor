@@ -20,6 +20,8 @@
         "react/react-in-jsx-scope": "off",
         "react/prop-types": "off",
         "no-unused-vars": 1,
-        "require-jsdoc": "off"
+        "require-jsdoc": "off",
+        "prefer-promise-reject-errors": "off",
+        "prefer-const": "off"
     }
 }
